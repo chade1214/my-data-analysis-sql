@@ -1,0 +1,67 @@
+-- 1. Utilisateur qui a reçu le plus de notes
+-- Cette requête permet de voir quel membre a reçu le plus de notes
+SELECT  mc.member_id AS identifiant, m.first_name, m.last_name,
+       COUNT(r.grades) AS nombre_de_notes
+FROM ratings r 
+JOIN member_car mc ON mc.member_id = r.rating_giver_id 
+JOIN members m ON mc.member_id = m.member_id 
+GROUP BY identifiant
+ORDER BY nombre_de_notes DESC
+LIMIT 1;
+
+-- 2. Utilisateur avec la moyenne de notes la plus élevée
+-- Cette requête calcule la moyenne des notes pour chaque membre et renvoie le membre avec la moyenne la plus haute
+SELECT  mc.member_id AS identifiant, m.first_name, m.last_name,
+       AVG(r.grades) AS moyenne_de_notes
+FROM ratings r 
+JOIN member_car mc ON mc.member_id = r.rating_giver_id 
+JOIN members m ON mc.member_id = m.member_id 
+GROUP BY identifiant
+ORDER BY moyenne_de_notes DESC
+LIMIT 1;
+
+-- 3. Distribution des notes
+-- Cette requête compte combien de fois chaque valeur de note (1 à 5) a été donnée
+SELECT grades, 
+       COUNT(*) AS nombre_de_fois_attribue
+FROM ratings
+GROUP BY grades 
+ORDER BY grades ASC;
+
+-- 4. Répartition des voitures utilisées dans les trajets
+-- Cette requête compte combien de trajets ont été effectués avec chaque modèle de voiture
+SELECT c.maker AS model, c.plate, 
+       COUNT(r.ride_id) AS nombre_de_trajets
+FROM cars c
+JOIN member_car mc ON c.car_id = mc.car_id
+JOIN rides r ON mc.member_car_id = r.member_car_id
+GROUP BY c.maker, c.plate
+ORDER BY nombre_de_trajets DESC;
+
+-- 5. Membres avec le plus grand nombre de trajets et les voitures utilisées
+-- Cette requête identifie les membres qui ont effectué le plus grand nombre de trajets et les voitures qu'ils ont utilisées
+SELECT mc.member_id, m.first_name, m.last_name,
+       c.maker AS marque, c.CO2_code AS model, 
+       COUNT(r.ride_id) AS nombre_de_trajets
+FROM member_car mc
+JOIN members m ON m.member_id = mc.member_id 
+JOIN cars c ON mc.car_id = c.car_id
+JOIN rides r ON mc.member_car_id = r.member_car_id 
+GROUP BY mc.member_id, c.maker, c.CO2_code 
+ORDER BY nombre_de_trajets DESC
+LIMIT 3;
+
+-- 6. Répartition des notes avec CASE pour créer des catégories
+-- Cette requête utilise la clause CASE pour classer les notes en catégories "Mauvais", "Moyen", "Bon"
+SELECT c.maker AS marque, 
+    CASE 
+        WHEN r.grades IN (1, 2) THEN 'Mauvais'
+        WHEN r.grades = 3 THEN 'Moyen'
+        WHEN r.grades IN (4, 5) THEN 'Bon'
+        ELSE 'Inconnu'
+    END AS categorie_notes,
+    COUNT(*) AS nombre_d_occurence
+FROM ratings r
+JOIN member_car mc ON mc.member_id = r.rating_giver_id 
+JOIN cars c ON mc.car_id = c.car_id 
+GROUP BY categorie_notes;
